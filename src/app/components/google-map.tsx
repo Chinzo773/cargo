@@ -7,36 +7,62 @@ import {
   Marker,
   StandaloneSearchBox,
 } from "@react-google-maps/api";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 
-// Type for the props received from the parent component
 type AddressInputProps = {
-  setAddress: (address: string) => void; // Function to set the address in the parent component
+  setAddress: (address: string) => void; 
+  selectedId: string | null;
+  selectedNum: string | null
 };
 
-const AddressInput: React.FC<AddressInputProps> = ({ setAddress }) => {
+const AddressInput: React.FC<AddressInputProps> = ({ setAddress, selectedId, selectedNum }) => {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
     null
   );
   const [address, setAddressState] = useState<string>("");
+  const [address2, setAddress2] = useState<string>("")
+  const [loading, setLoading] = useState<string>("-г Хүргүүлэх")
+
 
   const searchBoxRef = useRef<google.maps.places.SearchBox | null>(null); // useRef for the search box
 
-  // Handle when user selects an address from the autocomplete search box
+
   const handleSelect = useCallback(
     (places: google.maps.places.PlaceResult[]) => {
-      const place = places[0]; // We assume that the user selects the first result
+      const place = places[0];
       if (place.geometry) {
-        // const { lat, lng } = place.geometry.location;
-        // setLocation({ lat: lat(), lng: lng() });
         const selectedAddress = place.formatted_address || "";
-        setAddressState(selectedAddress); // Update local address state
-        setAddress(selectedAddress); // Pass address to parent
+        setAddressState(selectedAddress);
+        setAddress(selectedAddress);
       }
     },
     [setAddress]
   );
 
-  // Handle when the user clicks on the map to set the marker
+    const deliverence = async () => {
+      setLoading("-г Хүргүүлж байна ...")
+      await fetch("api/package", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          deliveryLocation: [address, address2],
+          packageId: selectedId,
+        }),
+      })
+        .then((res) => res.json())
+        .then((res) => {
+          if (res != "Done") {
+            toast("Алдаа гарлаа");
+          }
+        })
+        .catch((err) => console.error("Error fetching packages:", err));
+      toast("Амжилттай илгээгдлээ");
+    };
+
   const handleMapClick = useCallback(
     (e: google.maps.MapMouseEvent) => {
       const lat = e.latLng?.lat();
@@ -67,35 +93,62 @@ const AddressInput: React.FC<AddressInputProps> = ({ setAddress }) => {
         <GoogleMap
           id="address-map"
           mapContainerStyle={{ height: "100%", width: "100%" }}
-          center={location || { lat: 47.8864, lng: 106.9057 }} // Default to San Francisco
-          zoom={15}
-          onClick={handleMapClick} // Handle map clicks to set the marker
+          center={location || { lat: 47.91935461654484, lng: 106.91749590887291 }} // Default to San Francisco
+          zoom={16}
+          onClick={handleMapClick} 
         >
           {location && <Marker position={location} />}{" "}
-          {/* Show marker at selected location */}
         </GoogleMap>
         <StandaloneSearchBox
           onLoad={(ref) => {
-            searchBoxRef.current = ref; // Set the reference using useRef
+            searchBoxRef.current = ref; 
           }}
           onPlacesChanged={() =>
             handleSelect(searchBoxRef.current?.getPlaces() || [])
-          } // Safely access getPlaces()
+          } 
         >
-          <input
-            type="text"
-            placeholder="Enter your delivery address"
-            value={address}
-            onChange={(e) => {
-              setAddressState(e.target.value); // Update local address state
-              setAddress(e.target.value); // Update address in parent
-            }}
-            style={{
-              width: "100%",
-              padding: "10px",
-              fontSize: "16px",
-            }}
-          />
+          <div>
+            <Input
+              type="text"
+              placeholder="Enter your delivery address"
+              value={address}
+              onChange={(e) => {
+                setAddressState(e.target.value);
+                setAddress(e.target.value); 
+                console.log(address)
+              }}
+              style={{
+                width: "100%",
+                padding: "10px",
+                fontSize: "16px",
+              }}
+              className="mt-4"
+            />
+            <div className="mt-4">
+              <label className="text-sm font-medium">Хотхон/Байр/Тэмдэгт газар</label>
+              <Input
+                type="text"
+                placeholder="Сувдан Сондор, ##-байр, Пльеханов"
+                value={address2}
+                onChange={(e) => {
+                  setAddress2(e.target.value); 
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  fontSize: "16px",
+                }}
+              />
+            </div>
+
+            
+            <Button
+              className="cursor-pointer mt-4 bg-blue-600 hover:bg-blue-400 w-[100%] lg:w-[600px]"
+              onClick={() => deliverence()}
+            >
+              {selectedNum}{loading}
+            </Button>
+          </div>
         </StandaloneSearchBox>
       </div>
     </LoadScript>

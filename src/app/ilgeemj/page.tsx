@@ -25,6 +25,7 @@ const Page = () => {
   const userId = user?.id;
   const [data, setData] = useState<PackageDetailsProps[]>([]);
   const [selected, setSelected] = useState<PackageDetailsProps>();
+  const [loading, setLoading] = useState<String>('Уншиж байна...')
   const [address, setAddress] = useState("");
 
   const packages = async () => {
@@ -38,6 +39,7 @@ const Page = () => {
       .then((res) => {
         if (res.packages !== undefined) {
           setData(res.packages);
+          setLoading('Ачаа байхгүй байна')
         } else {
           toast("Дугаар бүртгүүлэх хэрэгтэй");
         }
@@ -51,30 +53,9 @@ const Page = () => {
     }
   }, [user]);
 
-  const deliverence = async () => {
-    await fetch("api/package", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        deliveryLocation: address,
-        packageId: selected?.id,
-      }),
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        if (res != "Done") {
-          toast("Алдаа гарлаа");
-        }
-      })
-      .catch((err) => console.error("Error fetching packages:", err));
-    toast("Амжилттай илгээгдлээ");
-  };
-
   return (
-    <div style={{ fontFamily: "sans-serif", padding: "20px" }}>
-      <h2 className=" text-3xl font-semibold pb-[50px]">Илгээмж</h2>
+    <div style={{ fontFamily: "sans-serif", padding: "20px" }} className="overflow-auto lg:overflow-visible mb-4">
+      <h2 className=" text-3xl font-semibold pb-[50px]">Илгээмж/Хүргэлт</h2>
       <div
         className="flex justify-between flex-col"
         style={{
@@ -94,7 +75,7 @@ const Page = () => {
           >
             {data.length == 0 ? (
               <div key={"Null"} className="text-black w-[]">
-                Ачаа байхгүй
+                {loading}
               </div>
             ) : (
               data?.map((props) => {
@@ -138,7 +119,7 @@ const Page = () => {
                         <span className="font-normal">{props.cost}₮</span>
                       </li>
                       <li className="text-gray-300 text-xs">
-                        Хү:&nbsp;
+                        Хүлээгдсэн огноо:&nbsp;
                         <span className="font-normal">{props.createdAt}</span>
                       </li>
                     </details>
@@ -156,13 +137,7 @@ const Page = () => {
           </div>
           {selected && (
             <div className="gap-[10px]">
-              <AddressInput setAddress={setAddress}></AddressInput>
-              <Button
-                className="cursor-pointer bg-blue-600 hover:bg-blue-400 mt-[44px] w-[100%] lg:w-[600px]"
-                onClick={() => deliverence()}
-              >
-                {selected.packageNumber}-г Хүргүүлэх
-              </Button>
+              <AddressInput selectedId = {selected.id} selectedNum={selected.packageNumber}  setAddress={setAddress}></AddressInput>
             </div>
           )}
         </div>

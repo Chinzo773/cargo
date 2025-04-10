@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const GET = async (_req: Request) => {
   try {
 

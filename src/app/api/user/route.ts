@@ -41,20 +41,51 @@ export const PUT = async (req: Request) => {
 
     const body = await req.json();
 
-    const { userId, name, email, phoneNumber, location } = body;
-    if (!userId || !name || !email || !phoneNumber) {
+    const { userId, phoneNumber } = body;
+    if (!userId || !phoneNumber) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    //Rel
+    const matchingPackages = await prisma.packages.findMany({
+      where: {
+        OR: [
+          { senderPhoneNumber: phoneNumber },
+          { receiverPhoneNumber: phoneNumber },
+        ],
+      },
+    });
+
+    if (matchingPackages.length > 0) {
+      await prisma.packages.updateMany({
+        where: {
+          id: {
+            in: matchingPackages.map(pkg => pkg.id),
+          },
+        },
+        data: {
+          clerkId: userId,
+        },
+      });
+    } else {
+      // If no matching packages are found, clear the clerkId for this user in the packages table
+      await prisma.packages.updateMany({
+        where: {
+          clerkId: userId,
+        },
+        data: {
+          clerkId: null,
+        },
+      });
+    }
+
+    // Update the user's phone number
     const updatedUser = await prisma.users.update({
       where: {
         clerkId: userId,
       },
       data: {
-        name,
-        email,
         phoneNumber,
-        location: location ?? "", 
       },
     });
 
@@ -62,6 +93,7 @@ export const PUT = async (req: Request) => {
       message: "User info updated successfully!",
       user: updatedUser, 
     });
+
   } catch (err) {
     return NextResponse.json(
       { error: "Failed to update user info", details:`error: ${err}` },
@@ -69,27 +101,3 @@ export const PUT = async (req: Request) => {
     );
   }
 };
-
-// export const POST = async (req: Request) => {
-//   try{
-//     const body = await req.json()
-
-//     const name = body.name
-//     const phoneNumber = body.phoneNumber
-//     const email = body.email
-//     const password = body.password
-
-//     await prisma.users.create({
-//       data: {
-//         name: name,
-//         phoneNumber:phoneNumber,
-//         email: email,
-//         password:password
-//       }
-//     })
-
-//     return NextResponse.json("Created")
-//   }catch(err){
-//     return NextResponse.json(err, {status: 500})
-//   }
-// }

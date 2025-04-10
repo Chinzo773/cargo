@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { DropdownMenuRadioGroupDemo } from "../components/dropdown";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 type Delivery = {
   id: string;
@@ -13,6 +14,9 @@ type Delivery = {
   quantity: number;
   weight: number;
   status: "In Transit" | "Delivered" | "Pending" | "Shipped";
+  delivery: boolean
+  deliveryLocation: ['','']
+  arrivedAt: Date
 };
 
 export default function Home() {
@@ -25,7 +29,7 @@ export default function Home() {
 
   const fetchDeliveries = async () => {
     try {
-      const response = await fetch("api/package", {
+      const response = await fetch("api/admin/package", {
         method: "GET",
       });
 
@@ -62,7 +66,7 @@ export default function Home() {
 
   const updateDeliveryStatus = async (id: string, status: string) => {
     try {
-      const response = await fetch("api/package/status", {
+      const response = await fetch("api/admin/status", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -85,12 +89,13 @@ export default function Home() {
       );
       fetchDeliveries();
     } catch (error) {
-      console.error("Error updating delivery status:", error);
+      toast("Error updating delivery status:" + error);
     }
   };
 
   const filteredDeliveries = deliveries.filter((d) => {
     return (
+      d.delivery == true ||
       d.packageNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       d.senderName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       d.senderPhoneNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||

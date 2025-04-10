@@ -9,11 +9,9 @@ datasource db {
 
 model Users {
   id          String     @id @default(uuid())
-  name        String     @unique
   phoneNumber String?    @unique
   email       String     @unique
   packages    Packages[]
-  location    String?
   updatedAt   DateTime   @updatedAt
   createdAt   DateTime   @default(now())
   clerkId     String     @unique
@@ -31,11 +29,11 @@ model Packages {
   volume              Float
   cost                Int
   status              String
-  user                Users?    @relation(fields: [userId], references: [id])
-  userId              String?
+  user                Users?    @relation(fields: [clerkId], references: [clerkId])
+  clerkId             String?
   destination         String
   delivery            Boolean   @default(false)
-  deliveryLocation    String?
+  deliveryLocation    String[]  @default([])
   updatedAt           DateTime  @updatedAt
   createdAt           DateTime  @default(now())
   arrivedAt           DateTime?
